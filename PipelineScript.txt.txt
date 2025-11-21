@@ -1,0 +1,52 @@
+pipeline {
+    agent any
+    tools {
+        maven "myMvn"
+        jdk "myJdk"
+        git "myGit"
+    }
+    
+    stages {
+        stage('PetStoreCompile') {
+            steps {
+                // Get code from GitHub
+                git credentialsId: 'a6ffe865-a15b-43ba-856f-284cd24c9cfe',
+                    url: 'https://github.com/rkarthik4/PetStoreWebApp.git'
+
+                // Run Maven compile
+                bat "mvn compile"
+            }
+        }
+
+        stage('PetStoreBuild') {
+            steps {
+                // Run Maven build
+                bat "mvn -Dmaven.test.failure.ignore=true clean install"
+            }
+
+            post {
+                success {
+                    // Deploy war file if build is successful.
+                    deploy adapters: [tomcat9(
+                        alternativeDeploymentContext: '',
+                        credentialsId: '65145e24-6814-46e4-ad4c-95ecb54e1f2e',
+                        path: '',
+                        url: 'http://localhost:8080/' )],
+                        contextPath: 'PetStoreWebApp',
+                        war: '**/*.war'
+                }
+            }
+        }
+        
+          stage('PetStoreTest') {
+            steps {
+                // Get code from GitHub
+                git credentialsId: 'a6ffe865-a15b-43ba-856f-284cd24c9cfe', 
+                url: 'https://github.com/rkarthik4/petstoretest.git'
+
+                // Run Maven test
+                bat "mvn test"
+            }
+        }
+    }
+}
