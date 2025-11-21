@@ -1,0 +1,46 @@
+pipeline {
+    agent any
+
+    tools {
+        maven "myMvn"
+        jdk "myJdk"
+        git "myGit"
+    }
+
+    stages {
+        stage('Build and Deploy') {
+            steps {
+                // Get code from GitHub repository
+                git credentialsId: 'a6ffe865-a15b-43ba-856f-284cd24c9cfe', 
+                url: 'https://github.com/rkarthik4/MavenWebAppOne.git'
+
+                // Maven build
+                bat "mvn -Dmaven.test.failure.ignore=true clean install"
+            }
+            post {
+                success {
+                    // Deploy WAR file to Tomcat if build succeeds
+                    deploy adapters: [
+                        tomcat9(
+                            alternativeDeploymentContext: '',
+                            credentialsId: '65145e24-6814-46e4-ad4c-95ecb54e1f2e',
+                            path: '',
+                            url: 'http://localhost:8080/')],
+                            contextPath: 'MavenWebAppOne',
+                            war: '**/*.war'
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                // Get test code from GitHub repository
+                git credentialsId: 'a6ffe865-a15b-43ba-856f-284cd24c9cfe', 
+                url: 'https://github.com/rkarthik4/MavenWebAppTest.git'
+
+                // Run Maven tests
+                bat "mvn test"
+            }
+        }
+    }
+}
